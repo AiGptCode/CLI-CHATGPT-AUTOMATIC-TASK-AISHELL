@@ -2,9 +2,9 @@
 ```
 # ChatGPT-OpenAI Integration
 
-![GitHub stars](https://img.shields.io/github/stars/YourUsername/YourRepo)
-![GitHub forks](https://img.shields.io/github/forks/YourUsername/YourRepo)
-![GitHub license](https://img.shields.io/github/license/YourUsername/YourRepo)
+![GitHub stars](https://img.shields.io/github/stars/AiGptCode/CLI-ChatGpt-automatic-Shell)
+![GitHub forks](https://img.shields.io/github/forks/AiGptCode/CLI-ChatGpt-automatic-Shell)
+![GitHub license](https://img.shields.io/github/license/AiGptCode/CLI-ChatGpt-automatic-Shell)
 
 ## Overview
 
