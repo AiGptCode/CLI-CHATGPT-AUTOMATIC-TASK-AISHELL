@@ -1,6 +1,6 @@
 ## CLI CHATGPT AUTOMATIC TASK AI SHELL 
 
-# ChatGPT CLI
+# ChatGPT CLI windows 
 
 ## Description
 
