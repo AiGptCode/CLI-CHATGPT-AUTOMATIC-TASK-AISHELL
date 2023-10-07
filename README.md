@@ -1,6 +1,6 @@
 
 ```
-### ChatGPT-OpenAI Integration
+### CLI CHATGPT AUTOMATIC TASK (AI SHELL)
 
 
 ## Overview
