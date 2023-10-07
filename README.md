@@ -21,22 +21,22 @@ To use this script, you can run it from the command line with different options 
 
 - List available OpenAI models:
   ```
-  python script.py -l
+  python cligpt.py -l
   ```
 
 - Perform chat-based completions:
   ```
-  python script.py -c "Your chat message here."
+  python cligpt.py -c "Your chat message here."
   ```
 
 - Perform completion-based generation:
   ```
-  python script.py -g "Your generation prompt here."
+  python cligpt.py -g "Your generation prompt here."
   ```
 
 - Generate images from prompts:
   ```
-  python script.py -i "image: Generate a beautiful sunset."
+  python cligpt.py -i "image: Generate a beautiful sunset."
   ```
 
 Make sure to customize the `GPT_MODEL`, `TEMPERATURE`, `MAX_TOKENS`, and other constants according to your needs.
