@@ -1,6 +1,6 @@
 ## CLI CHATGPT AUTOMATIC TASK AI SHELL 
 
-# ChatGPT CLI windows 
+# ChatGPT CLI windows (image generator)
 
 ![Demo GIF](https://github.com/AiGptCode/CLI-CHATGPT-AUTOMATIC-TASK-AISHELL/blob/main/IMG_5100.gif)
 
