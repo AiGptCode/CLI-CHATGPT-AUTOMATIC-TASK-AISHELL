@@ -23,7 +23,7 @@
 
 # تنظیم تاریخ فعلی
 ‏today_date = datetime.today().strftime("%m/%d/%Y")
-
+ 
 # تابع برای ارسال درخواست به API OpenAI
 ‏def send_request_to_openai(prompt):
 ‏    cmd = [
