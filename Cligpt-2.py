@@ -1,0 +1,212 @@
+
+import os
+import sys
+import json
+import requests
+from datetime import datetime
+
+# Application configuration information
+OPENAI_KEY = os.environ.get("OPENAI_KEY")
+MODEL = "gpt-3.5-turbo"
+TEMPERATURE = 0.7
+MAX_TOKENS = 1024
+SIZE = "512x512"
+CONTEXT = False
+MULTI_LINE_PROMPT = False
+
+# Command generation prompt
+COMMAND_GENERATION_PROMPT = (
+    "You are a Command Line Interface expert, and your task is to provide functioning shell commands. "
+    "Return a CLI command and nothing else - do not send it in a code block, quotes, or anything else, "
+    "just the pure text CONTAINING ONLY THE COMMAND. If possible, return a one-line bash command or chain "
+    "many commands together. Return ONLY the command ready to run in the terminal. The command should do the following:"
+)
+
+# Current date
+today_date = datetime.today().strftime("%m/%d/%Y")
+
+
+# Function to send a request to the OpenAI API
+def send_request_to_openai(prompt):
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_KEY}"
+    }
+    data = {
+        "model": MODEL,
+        "prompt": prompt,
+        "max_tokens": MAX_TOKENS,
+        "temperature": TEMPERATURE
+    }
+
+    response = requests.post("https://api.openai.com/v1/completions", headers=headers, json=data)
+    response_data = response.json()
+    return response_data["choices"][0]["message"]["content"]
+
+
+# Function to add the assistant's response to the chat message
+def add_assistant_response_to_chat_message(response_data):
+    global chat_message
+    chat_message += ', {"role": "assistant", "content": "' + response_data + '"}'
+
+
+# Function to handle command generation
+def handle_command_generation(prompt):
+    request_prompt = COMMAND_GENERATION_PROMPT + prompt
+    chat_message = '{"role": "user", "content": "' + request_prompt + '"}'
+    response = send_request_to_openai(chat_message)
+    response_data = json.loads(response)["choices"][0]["message"]["content"]
+
+    print("Processing...")
+    print(response_data)
+
+    # Check for potentially dangerous commands
+    dangerous_commands = ["rm", ">", "mv", "mkfs", ":(){:|:&};", "dd", "chmod", "wget", "curl"]
+    for command in dangerous_commands:
+        if command in response_data:
+            print("Warning! This command can change your file system or download external scripts & data. Please do not execute code that you don't understand completely.")
+
+    run_answer = input("Would you like to execute it? (Yes/No): ")
+    if run_answer.lower() in ["yes", "y", "ok"]:
+        print("Executing command:", response_data)
+        os.system(response_data)
+
+
+# Function to convert a date string
+def convert_date(date_str):
+    date_obj = datetime.strptime(date_str, "%m/%d/%Y")
+    return date_obj.strftime("%Y-%m-%d")
+
+
+# Initialize initial variables
+chat_message = ""
+prompt = ""
+pipe_mode_prompt = ""
+running = True
+chat_context = ""
+system_prompt = (
+    "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. "
+    "Current date: " + today_date + ". Knowledge cutoff: 9/1/2021."
+)
+
+# Validate the API key
+if OPENAI_KEY is None:
+    print("You need to set your OPENAI_KEY to use this script")
+    print("You can set it temporarily by running this on your terminal: export OPENAI_KEY=YOUR_KEY_HERE")
+    sys.exit(1)
+
+
+# Function to append text to the chat history
+def append_to_chat_history(message):
+    global chat_message
+    chat_message += message + "\n"
+
+
+# Set command-line options
+if len(sys.argv) > 1:
+    if sys.argv[1] == "-l" or sys.argv[1] == "--list":
+        list_models()
+    with open(os.path.expanduser("~/.chatgpt_history"), "w") as history_file:
+        history_file.write("")
+
+# Set chat input mode
+if sys.stdin.isatty():
+    print("Welcome to chatgpt. You can quit with 'exit' or 'q'.")
+    if not MULTI_LINE_PROMPT:
+        append_to_chat_history(input("Enter a prompt: "))
+else:
+    pipe_mode_prompt = sys.stdin.read()
+
+while running:
+    if not pipe_mode_prompt:
+        if MULTI_LINE_PROMPT:
+            print("Enter a prompt: (Press Enter then Ctrl-D to send)")
+            user_input_temp_file = open("user_input_temp_file.txt", "w")
+            user_input_temp_file.write(sys.stdin.read())
+            user_input_temp_file.close()
+            with open("user_input_temp_file.txt", "r") as file:
+                input_from_temp_file = file.read()
+            os.remove("user_input_temp_file.txt")
+            prompt = input_from_temp_file
+        else:
+            print("Enter a prompt:")
+            prompt = input()
+
+    if prompt.lower() in ["exit", "q"]:
+        running = False
+
+    if prompt.startswith("image:"):
+        image_prompt = prompt[len("image:") :]
+        response = send_request_to_openai(image_prompt)
+        image_url = json.loads(response)["data"][0]["url"]
+        print(f"Your image was created.\nLink: {image_url}")
+
+        open_image = input("Would you like to open it? (Yes/No): ")
+        if open_image.lower() in ["yes", "y", "ok"]:
+            print("Opening image...")
+            try:
+                if sys.platform == "win32":
+                    os.system(f"start {image_url}")
+                else:
+                    os.system(f"open {image_url}")
+            except Exception as e:
+                print(f"Error opening image: {str(e)}")
+
+    elif prompt == "history":
+        with open(os.path.expanduser("~/.chatgpt_history"), "r") as history_file:
+            print(history_file.read())
+
+    elif prompt == "models":
+        list_models()
+
+    elif prompt.startswith("model:"):
+        model_id = prompt[len("model:") :].strip()
+        models_response = requests.get("https://api.openai.com/v1/models", headers=headers).json()
+        models_data = models_response["data"]
+        model_info = next((model for model in models_data if model["id"] == model_id), None)
+        if model_info:
+            print(f"Complete details for model: {model_id}\n{model_info}")
+        else:
+            print(f"Model {model_id} not found.")
+
+    elif prompt.startswith("command:"):
+        command_prompt = prompt[len("command:") :].strip()
+        handle_command_generation(command_prompt)
+
+    elif MODEL.startswith("gpt-"):
+        response = send_request_to_openai(prompt)
+        response_data = json.loads(response)["choices"][0]["message"]["content"]
+
+        print("Processing...")
+        print(response_data)
+
+        add_assistant_response_to_chat_message(response_data)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        append_to_chat_history(f"{timestamp{prompt}\n{response_data}")
+
+    else:
+        response = send_request_to_openai(prompt)
+        response_data = json.loads(response)["choices"][0]["text"]
+
+        print("Processing...")
+        print(response_data)
+
+        if CONTEXT:
+            chat_context += f"\nQ: {prompt}"
+            while len(chat_context.split()) * 1.3 > (MAX_TOKENS - 100):
+                chat_context = chat_context[chat_context.find("\n") + 1 :]
+                chat_context = f"{system_prompt}\n{chat_context}"
+        response_data = response_data[2:]  # Remove 'A: ' prefix
+        print(response_data)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        append_to_chat_history(f"{timestamp} {prompt}\n{response_data}")
+
+        if CONTEXT:
+            chat_context += f"\nA: {response_data}"
+            while len(chat_context.split()) * 1.3 > (MAX_TOKENS - 100):
+                chat_context = chat_context[chat_context.find("\n") + 1 :]
+                chat_context = f"{system_prompt}\n{chat_context}"
+
+sys.exit(0)
