@@ -7,7 +7,7 @@
 ## Description
 
 This Python script is a command-line interface (CLI) for interacting with OpenAI's GPT-3.5 Turbo model. It allows you to have conversations with the model, generate commands, and more.
-
+ 
 ## Prerequisites
 
 Before using this script, make sure you have the following:
